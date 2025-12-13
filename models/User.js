@@ -29,14 +29,18 @@ const UserSchema = mongoose.Schema({
     enum: ['admin', 'user'],
     default: 'user',
   },
-
+  verificationToken:String,
+  isVerified:{
+    type: Boolean,
+    default:false,
+  },
+  verified: Date,
 },{
     timestamps:true
 })
 
 UserSchema.pre('save',async function(){
-  // console.log(this.modifiedPaths());
-  if(!this.modifiedPaths('password'))return;
+  if(!this.isModified('password'))return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password,salt);
 })

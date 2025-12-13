@@ -2,6 +2,8 @@ const UserSchema = require('../models/User')
 const { StatusCodes } = require('http-status-codes')
 const CustomAPIError = require("../errors")
 const { isTokenValid, attachCookiesToResponse, createTokenUser } = require('../utils')
+const { token } = require('morgan')
+const crypto = require('crypto')
 
 const register = async(req,res)=>{
     const {email,name,password} = req.body
@@ -15,17 +17,51 @@ const register = async(req,res)=>{
     const isFirstAccount = (await UserSchema.countDocuments({})) === 0;
     const role = isFirstAccount ? 'admin' : 'user';
 
+    const verificationToken = crypto.randomBytes(40).toString('hex');
 
-    const user = await UserSchema.create({name, email,password, role })
-    console.log(user)
-    const tokenUser = createTokenUser(user)
-    attachCookiesToResponse({res,user: tokenUser});
-    res.status(StatusCodes.CREATED).json({msg:'Success',user:tokenUser})
-
+    const user = await UserSchema.create({
+        name,
+        email,
+        password,
+        role, 
+        verificationToken })
+   
+    // SEND VERIFICATION TOKEN BACK ONLY WHILE TESTING IN POSTMAN !!
+    res.status(StatusCodes.CREATED).json({
+        msg: 'Success! Please check your email to verify account ',
+        token: verificationToken
+    })
 }
 
 
+const verifyEmail = async(req,res)=>{
+    const{verificationToken, email} = req.body;
+    if(!verificationToken || !email){
+        throw new CustomAPIError.BadRequestError('Verification Token or email can not be empty')
+    }
+    const user = await UserSchema.findOne({email: email})
+    if(!user){
+        throw new CustomAPIError.BadRequestError('User with this email cannot be found')
+    }
+    if(user.verificationToken !== verificationToken){
+        throw new CustomAPIError.UnauthenticatedError('Verification Failed')
+    }
+    
+    user.isVerified = true;
+    user.verified = Date.now();
+    user.verificationToken = '';
+
+    await user.save();
+
+    res.status(StatusCodes.OK).json({
+        msg:"Email Verified",
+       verificationToken,
+       email
+    })
+}
+
 const login = async(req,res)=>{
+
     const {email,password} = req.body;
     if(!email || !password){
         throw new CustomAPIError.BadRequestError('Email or Password Invalid')
@@ -36,7 +72,10 @@ const login = async(req,res)=>{
     }
     const isPasswordCorrect = await user.comparePassword(password)
     if(!isPasswordCorrect){
-        throw new CustomAPIError.BadRequestError('Password is Incorrect')
+        throw new CustomAPIError.UnauthenticatedError('Password is Incorrect')
+    }
+    if(!user.isVerified){
+        throw new CustomAPIError.UnauthenticatedError('Please Verify your email')
     }
 
     const tokenUser = createTokenUser(user)
@@ -54,4 +93,7 @@ const logout = async(req,res)=>{
 }
 
 
-module.exports = {register, login, logout}
+module.exports = {register, 
+    verifyEmail,
+    login,
+    logout}
