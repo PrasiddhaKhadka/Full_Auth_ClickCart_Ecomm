@@ -4,6 +4,7 @@ const CustomAPIError = require("../errors")
 const { isTokenValid, attachCookiesToResponse, createTokenUser } = require('../utils')
 const { token } = require('morgan')
 const crypto = require('crypto')
+const sendEmail = require('../utils/sendEmail')
 
 const register = async(req,res)=>{
     const {email,name,password} = req.body
@@ -25,6 +26,8 @@ const register = async(req,res)=>{
         password,
         role, 
         verificationToken })
+
+    await sendEmail();
    
     // SEND VERIFICATION TOKEN BACK ONLY WHILE TESTING IN POSTMAN !!
     res.status(StatusCodes.CREATED).json({
