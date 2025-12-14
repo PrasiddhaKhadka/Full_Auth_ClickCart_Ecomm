@@ -27,11 +27,14 @@ const register = async(req,res)=>{
         role, 
         verificationToken })
 
-    await sendVerificationEmail({
-        email:email,
-        name:name,
-        verificationToken:verificationToken,
+     // FOR LOCAL SERVER FRONTEND
+     const origin = 'http://localhost:3000';   
 
+    await sendVerificationEmail({
+        email:user.email,
+        name:user.name,
+        verificationToken:user.verificationToken,
+        origin:origin
     })
    
     // SEND VERIFICATION TOKEN BACK ONLY WHILE TESTING IN POSTMAN !!
