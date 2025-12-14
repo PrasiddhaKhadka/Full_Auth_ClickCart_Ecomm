@@ -1,10 +1,10 @@
 const UserSchema = require('../models/User')
 const { StatusCodes } = require('http-status-codes')
 const CustomAPIError = require("../errors")
-const { isTokenValid, attachCookiesToResponse, createTokenUser } = require('../utils')
+const { isTokenValid, attachCookiesToResponse, createTokenUser,sendVerificationEmail } = require('../utils')
 const { token } = require('morgan')
 const crypto = require('crypto')
-const sendEmail = require('../utils/sendEmail')
+// const sendEmail = require('../utils/sendEmail')
 
 const register = async(req,res)=>{
     const {email,name,password} = req.body
@@ -27,7 +27,12 @@ const register = async(req,res)=>{
         role, 
         verificationToken })
 
-    await sendEmail();
+    await sendVerificationEmail({
+        email:email,
+        name:name,
+        verificationToken:verificationToken,
+
+    })
    
     // SEND VERIFICATION TOKEN BACK ONLY WHILE TESTING IN POSTMAN !!
     res.status(StatusCodes.CREATED).json({

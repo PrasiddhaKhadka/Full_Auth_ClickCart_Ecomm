@@ -15,6 +15,7 @@ const notFound = require('./middlewares/not-found')
 const errorHandler = require('./middlewares/error-hanlder')
 // const authenticationMiddleware = require('./middlewares/authentication')
 
+app.set('trust proxy', 1);
 app.use(morgan('tiny'));
 app.use(express.json());
 app.use(cookieParser(process.env.JWT_SECRET));
