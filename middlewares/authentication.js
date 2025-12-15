@@ -2,18 +2,32 @@ const CustomApiError = require('../errors/')
 const { isTokenValid } = require('../utils')
 
 const authenticationMiddleware = async(req,res,next)=>{
-    const token = req.signedCookies.token;
+    // const token = req.signedCookies.token;
 
-    if(!token){
-       throw new CustomApiError.UnauthorizedError('Authentication in Valid')
-    }
+    // if(!token){
+    //    throw new CustomApiError.UnauthorizedError('Authentication in Valid')
+    // }
    
+    // try {
+    //     const {userId, user, role} = isTokenValid({ token })
+    //     req.user = { userId, user, role}
+    //     next()
+    // } catch (error) {
+    //     console.log(error);
+    //    throw new CustomApiError.UnauthorizedError('Authentication is not Valid')
+    // }
+
+    
+    // FOR 2 TOKENs
+    const {refreshToken, accessToken} = req.signedCookies;
     try {
-        const {userId, user, role} = isTokenValid({ token })
-        req.user = { userId, user, role}
-        next()
+        if(accessToken){
+            const payload = isTokenValid(accessToken);
+            req.user = payload.user
+            return next();
+        }
+        
     } catch (error) {
-        console.log(error);
        throw new CustomApiError.UnauthorizedError('Authentication is not Valid')
     }
 }
